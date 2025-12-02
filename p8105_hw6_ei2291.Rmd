@@ -128,8 +128,40 @@ city_or_df |>
 The odds ratio varies significantly across the cities. I'd say in most cities, the adjusted OR is below 1, which means homicides with male victims are less likely to be solved compared to ones with female victims after adjusting for age and race. Some cities have adjusted ORs of 1 or higher, but they have a wide confidence intervals, so this could mean that they may have has a smaller sample size or even uncertainity. Generally, the pattern we see is that male victim homicides are solved less frequently. 
 
 
+## Problem 2
 
+load the weather data
+```{r}
+data("weather_df")
 
+weather_lm=
+  lm(tmax~tmin+prcp, data=weather_df)
+```
+
+bootstrap function:
+```{r}
+bootstrap_func = function(df){
+  bootstrap_sample= sample_frac(df, replace = TRUE)
+  mod= lm(tmax~tmin + prcp, data = bootstrap_sample)
+  r2 = glance(mod)$r.squared
+ 
+  coefs = tidy(mod)
+  beta1= coefs$estimate[coefs$term == "tmin"]
+  beta2= coefs$estimate[coefs$term == "prcp"]
+  tibble(
+    r2 = r2,
+    beta_ratio = beta1/beta2
+  )
+}
+```
+
+Let's run 5000 bootstrap samples
+```{r, cache=TRUE}
+set.seed(1)
+
+bootstrap_results = 
+  map_dfr(1:5000, ~bootstrap_func(weather_df))
+```
 
 
 
