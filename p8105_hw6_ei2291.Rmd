@@ -174,6 +174,9 @@ bootstrap_results |>
     x = "R^2"
   )
 ```
+
+- the bootstrap distribution of this r^2 is narrower and centered around 0.94.This tells us that the regression model almost always explains most of the variation in tmax, no matter which bootstrap sample we use.
+ 
  
  β1/β2:
 ```{r}
@@ -186,9 +189,27 @@ bootstrap_results |>
   )
 ```
 
+- The β1/β2 values are more spread out. The ratios are negative, which is what's expected since tmin has a positive effect on tmax (tmin increases tmax) while prcp has a small negative effect( prcp slightly decreases tmax). There's also more uncertanity in this ratio.
 
-
-
+95% bootstrap Confidence intervals
+For R^2:
+```{r}
+bootstrap_results |> 
+  summarize(
+    ci_low = quantile(r2, 0.025),
+    ci_high= quantile(r2, 0.975)
+  )
+```
+ For β1/β2:
+```{r}
+bootstrap_results |> 
+  summarize(
+     ci_low = quantile(beta_ratio, 0.025),
+    ci_high= quantile(beta_ratio, 0.975)
+  )
+```
+ 
+- Using 5000 bootstrap samples, the 95% CI for the r^2 is very tight, so the model is very stable. The β1/β2 interval is wider, meaning less certainity about the exact value of the ratio. 
 
 
 
