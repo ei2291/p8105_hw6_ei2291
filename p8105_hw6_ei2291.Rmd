@@ -259,6 +259,68 @@ bw_df |>
 
 - The residuals are mostly centered around zero and don't have a strong pattern. This meands the model fits well. But the spread of residuals slightly increases for larger predicted birthweight. this could mean that the model may not capture all sources of variation. Overall, this plot suggests that the model is reasonable. 
 
+Let's fit the two comparison models
+
+Model A: Length + gestational age (main effects only):
+```{r}
+model_a=
+  lm(bwt~ blength +gaweeks, data = bw_df)
+```
+
+Model B: Head cirumferece + length +sex + all interactions (including 3 way interaction)
+```{r}
+model_b =
+  lm(bwt~ bhead*blength*babysex, data=bw_df)
+```
+
+Let's compare the models using cross-validated prediction error:
+```{r}
+set.seed(1)
+
+cv_df=
+  crossv_mc(bw_df, 50) |> 
+  mutate(
+    train= map(train, as_tibble),
+    test= map(test, as_tibble)
+  ) |> 
+  mutate(
+    main_mod= map(train, ~lm(bwt ~ gaweeks + blength + bhead + momage + smoken, data = .)),
+    mod_a= map(train, ~lm(bwt ~ blength + gaweeks, data = .)),
+    mod_b= map(train, ~lm(bwt ~ bhead * blength * babysex, data = .))
+  ) |> 
+  mutate(
+    rmse_main= map2_dbl(main_mod, test, modelr::rmse),
+    rmse_a= map2_dbl(mod_a, test, modelr::rmse),
+    rmse_b= map2_dbl(mod_b, test, modelr::rmse)
+  )
+```
+
+let's plot the RMSE comparison:
+```{r}
+cv_df |> 
+  select(starts_with("rmse")) |> 
+  pivot_longer(everything(),
+               names_to="model",
+               values_to = "rmse") |> 
+  ggplot(aes(x=model, y=rmse))+
+  geom_violin()+
+  labs(
+    title = "Cross-validated prediction error",
+    x = "Model",
+    y = "RMSE"
+  )
+```
+
+- Baed on 50 fold cross-validated RMSE, the main model I proposed performed the best overall. Model A using length and gestational age only had a low performance, suggesting that the two variables don't fully really explain birthweight. Model B which used all interactions did way better than Model A, but not as good as my main model, likely because the interaction does generalize as well and also it was complex. So overall, I'd say the main model has a good biological reasoning and prediction accuracy. 
+
+
+
+
+
+
+
+
+
 
 
 
