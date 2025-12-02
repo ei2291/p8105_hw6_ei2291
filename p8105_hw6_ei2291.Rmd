@@ -163,6 +163,28 @@ bootstrap_results =
   map_dfr(1:5000, ~bootstrap_func(weather_df))
 ```
 
+Plotting distribution:
+ r^2:
+```{r}
+bootstrap_results |> 
+  ggplot(aes(x=r2))+
+  geom_density()+
+  labs(
+    title= "Bootstrap distribution of R^2",
+    x = "R^2"
+  )
+```
+ 
+ β1/β2:
+```{r}
+bootstrap_results |> 
+  ggplot(aes(x=beta_ratio))+
+  geom_density()+
+  labs(
+    title= "Bootstrap distribution of beta1/beta2",
+    x = "beta1/beta2"
+  )
+```
 
 
 
