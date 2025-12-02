@@ -49,7 +49,7 @@ clean_df =
   ) |>
   filter(
     !(city_state %in% c("Dallas, TX", "Phoenix, AZ", "Kansas City, MO", "Tulsa, AL")),
-    victim_race %in% c("White", "Black")
+    victim_race %in% c("White","Black")
   )
 ```
 Baltimore only logistic regression:
@@ -62,7 +62,7 @@ baltimore_model =
   glm(
     solved ~ victim_age + victim_sex + victim_race,
     data = baltimore_df,
-    family = binomial()
+    family= binomial()
   )
 ```
 
@@ -77,6 +77,56 @@ baltimore_results |>
   filter(term == "victim_sexMale") |> 
   select(term, estimate, conf.low, conf.high)
 ```
+
+glm for each city, OR and 95% CI:
+```{r}
+city_models =
+  clean_df |>
+  group_by(city_state) |>
+  nest() |>
+  mutate(
+    model=map(data,
+      ~ glm(
+          solved ~ victim_age + victim_sex + victim_race,
+          data= .x,
+          family = binomial()
+        )
+    ),
+    results= map(model,
+      ~ tidy(.x, conf.int = TRUE, exponentiate= TRUE)
+    )
+  )
+```
+
+to get male vs female in each city:
+```{r}
+city_or_df=
+  city_models |> 
+  unnest(results) |> 
+  filter(term=="victim_sexMale") |> 
+  select(city_state, estimate, conf.low, conf.high)
+```
+
+Plotting OR and CI by city:
+```{r}
+city_or_df |>
+  mutate(city_state= fct_reorder(city_state,estimate)) |>   
+  ggplot(aes(x =estimate, y = city_state)) +
+  geom_point(size = 2) +
+  geom_errorbarh(aes(xmin = conf.low, xmax = conf.high), height = 0.2) +
+  labs(
+    title ="Solved Homicides: Male vs Female Victims",
+    x = "Adjusted Odds Ratio",
+    y = "City"
+  ) +
+  theme_bw(base_size = 12) +
+  theme(
+    axis.text.y =element_text(size = 5)
+  )
+```
+
+The odds ratio varies significantly across the cities. I'd say in most cities, the adjusted OR is below 1, which means homicides with male victims are less likely to be solved compared to ones with female victims after adjusting for age and race. Some cities have adjusted ORs of 1 or higher, but they have a wide confidence intervals, so this could mean that they may have has a smaller sample size or even uncertainity. Generally, the pattern we see is that male victim homicides are solved less frequently. 
+
 
 
 
